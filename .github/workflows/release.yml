@@ -23,7 +23,7 @@ jobs:
 
     strategy:
       matrix:
-        item: [{ df_path: ./rust/musl-builder, image: "${{ github.repository}}/rust-musl-builder" }]
+        item: [{ df_path: ./rust/musl-builder, image: "${{ github.repository}}/rust-musl-builder" }, { df_path: ./rust/musl-watch, image: "${{ github.repository}}/rust-musl-watch" }]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

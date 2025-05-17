@@ -70,4 +70,8 @@ RUN fish -c "\
     curl -fsSL https://get.pnpm.io/install.sh | sh - \
   "
 
+USER root
+RUN cp -r /home/coder/. /home/files/ && find /home/coder -mindepth 1 -delete
+USER coder
+
 ENTRYPOINT [ "/usr/bin/fish" ]

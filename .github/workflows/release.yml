@@ -35,14 +35,6 @@ jobs:
             image: "${{ github.repository}}/rust-musl-watch"
           - df_path: ./node/alpine-dev
             image: "${{ github.repository}}/node-alpine-dev"
-        platform:
-          - linux/amd64
-          - linux/arm64
-        exclude:
-          - item:
-              df_path: ./coder/reveal-js
-              image: "${{ github.repository}}/coder-reveal-js"
-            platform: linux/arm64
     steps:
       - name: Set up Docker
         uses: docker/setup-docker-action@v4
@@ -80,7 +72,7 @@ jobs:
         id: push
         uses: docker/build-push-action@v6
         with:
-          platforms: ${{ matrix.platform }}
+          platforms: ${{ matrix.item.df_path != './coder/reveal-js' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
           context: ./
           file: ${{ matrix.item.df_path }}/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}

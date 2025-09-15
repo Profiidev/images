@@ -27,13 +27,22 @@ jobs:
     strategy:
       matrix:
         item:
-          [
-            { df_path: ./coder/reveal-js, image: "${{ github.repository}}/coder-reveal-js" },
-            { df_path: ./rust/musl-builder, image: "${{ github.repository}}/rust-musl-builder" },
-            { df_path: ./rust/musl-watch, image: "${{ github.repository}}/rust-musl-watch" },
-            { df_path: ./node/alpine-dev, image: "${{ github.repository}}/node-alpine-dev" },
-          ]
-        platform: [linux/amd64, linux/arm64]
+          - df_path: ./coder/reveal-js
+            image: "${{ github.repository}}/coder-reveal-js"
+          - df_path: ./rust/musl-builder
+            image: "${{ github.repository}}/rust-musl-builder"
+          - df_path: ./rust/musl-watch
+            image: "${{ github.repository}}/rust-musl-watch"
+          - df_path: ./node/alpine-dev
+            image: "${{ github.repository}}/node-alpine-dev"
+        platform:
+          - linux/amd64
+          - linux/arm64
+        exclude:
+          - item:
+              df_path: ./coder/reveal-js
+              image: "${{ github.repository}}/coder-reveal-js"
+            platform: linux/arm64
     steps:
       - name: Set up Docker
         uses: docker/setup-docker-action@v4

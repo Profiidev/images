@@ -1,10 +1,12 @@
-FROM rust:latest 
+FROM rust:1-slim AS builder
 RUN rustup default stable
 RUN rustup update
 
 RUN cargo install cargo-watch
 
-RUN rustup target add x86_64-unknown-linux-musl
-RUN apt-get update && apt-get install -y tini cmake
+FROM rust:1-slim
+COPY --from=builder /usr/local/cargo/bin/cargo-watch /usr/local/cargo/bin/cargo-watch
+
+RUN apt-get update && apt-get install -y tini && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

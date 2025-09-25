@@ -1,11 +1,10 @@
-FROM messense/rust-musl-cross:x86_64-musl AS chef
-RUN rm -rf ~/.rustup && \
-    rustup update stable && \
-    rm -rf ~/.rustup//toolchains/stable-x86_64-unknown-linux-gnu/share
+FROM rust:1-slim AS builder
+
+RUN cargo install cargo-chef
+
+FROM rust:1-slim
+COPY --from=builder /usr/local/cargo/bin/cargo-chef /usr/local/cargo/bin/cargo-chef
 
 RUN rustup target add x86_64-unknown-linux-musl
 
-RUN apt update && apt install libssl-dev pkg-config -y && apt-get clean
-
-RUN cargo install cargo-chef 
 WORKDIR /app

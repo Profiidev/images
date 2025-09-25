@@ -1,10 +1,18 @@
-FROM rust:latest 
-RUN rustup default stable
-RUN rustup update
+FROM debian:bullseye-slim AS builder
 
-RUN cargo install cargo-watch
+WORKDIR /app
 
-RUN rustup target add x86_64-unknown-linux-musl
-RUN apt-get update && apt-get install -y tini cmake
+RUN apt-get update && apt-get install -y wget xz-utils ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# download and install cargo-watch for the current architecture
+RUN wget https://github.com/watchexec/cargo-watch/releases/download/v8.5.3/cargo-watch-v8.5.3-$(uname -m)-unknown-linux-gnu.tar.xz \
+    && tar -xJf cargo-watch-v8.5.3-$(uname -m)-unknown-linux-gnu.tar.xz \
+    && mv cargo-watch-v8.5.3-$(uname -m)-unknown-linux-gnu/cargo-watch /cargo-watch \
+    && rm -rf cargo-watch-*
+
+FROM rust:1-slim
+
+RUN apt-get update && apt-get install -y tini && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /cargo-watch /usr/local/cargo/bin/cargo-watch
 
 WORKDIR /app

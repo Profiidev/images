@@ -10,8 +10,8 @@ RUN wget https://github.com/LukeMathWalker/cargo-chef/releases/latest/download/c
     && rm -rf cargo-chef-*
 
 FROM rust:1-slim
-COPY --from=builder /cargo-chef /usr/local/cargo/bin/cargo-chef
 
 RUN rustup target add x86_64-unknown-linux-musl
+COPY --from=builder /cargo-chef /usr/local/cargo/bin/cargo-chef
 
 WORKDIR /app

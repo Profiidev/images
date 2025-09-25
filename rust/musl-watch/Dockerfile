@@ -11,8 +11,8 @@ RUN wget https://github.com/watchexec/cargo-watch/releases/download/v8.5.3/cargo
     && rm -rf cargo-watch-*
 
 FROM rust:1-slim
-COPY --from=builder /cargo-watch /usr/local/cargo/bin/cargo-watch
 
 RUN apt-get update && apt-get install -y tini && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /cargo-watch /usr/local/cargo/bin/cargo-watch
 
 WORKDIR /app

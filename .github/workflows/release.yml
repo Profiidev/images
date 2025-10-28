@@ -31,6 +31,8 @@ jobs:
             image: "${{ github.repository}}/coder-reveal-js"
           - df_path: ./rust/musl-builder
             image: "${{ github.repository}}/rust-musl-builder"
+          - df_path: ./rust/gnu-builder
+            image: "${{ github.repository}}/rust-gnu-builder"
           - df_path: ./rust/musl-watch
             image: "${{ github.repository}}/rust-musl-watch"
           - df_path: ./node/alpine-dev

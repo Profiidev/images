@@ -39,7 +39,7 @@ jobs:
             image: "${{ github.repository}}/node-alpine-dev"
     steps:
       - name: Set up Docker
-        uses: docker/setup-docker-action@v4
+        uses: docker/setup-docker-action@v5
         with:
           daemon-config: |
             {
@@ -85,7 +85,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v3
+        uses: actions/attest-build-provenance@v4
         if: github.event_name != 'pull_request'
         with:
           subject-name: ${{ env.REGISTRY }}/${{ matrix.item.image }}
@@ -93,7 +93,7 @@ jobs:
           push-to-registry: true
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.34.2
         if: github.event_name == 'pull_request'
         with:
           image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}

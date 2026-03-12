@@ -93,7 +93,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: ${{ github.event_name != 'workflow_dispatch' && 'type=gha,mode=max' || '' }}
           cache-to: type=gha,mode=max
-          outputs: type=image,${{ github.event_name == 'pull_request' && ',push=true,push-by-digest=true,name-canonical=true' || '' }}
+          outputs: type=image${{ github.event_name != 'pull_request' && ',push=true,push-by-digest=true,name-canonical=true' || '' }}
 
       - name: Export digest
         if: github.event_name != 'pull_request'

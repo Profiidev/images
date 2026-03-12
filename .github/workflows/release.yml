@@ -13,41 +13,48 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  find-dockerfiles:
+    name: Find Dockerfiles
+    runs-on: ubuntu-latest
+    outputs:
+      items: ${{ steps.set-matrix.outputs.items }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Find Dockerfiles and set matrix
+        id: set-matrix
+        run: |
+          # Replace / with - in image names to avoid issues with GitHub Actions matrix and strip the leading ./ from the path
+          items=$(find . -type f -name 'Dockerfile' -exec dirname {} \; | jq -R -s -c 'split("\n")[:-1] | map({df_path: ., image: (. | sub("^./"; "") | gsub("/"; "-"))})')
+          echo "items=$items" >> $GITHUB_OUTPUT
+
   build:
     name: Build Images
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
 
     permissions:
       contents: read
       packages: write
       attestations: write
-      id-token: write
-      security-events: write
+
+    needs: find-dockerfiles
 
     strategy:
       matrix:
-        item:
-          - df_path: ./coder/reveal-js
-            image: "${{ github.repository}}/coder-reveal-js"
-          - df_path: ./rust/musl-builder
-            image: "${{ github.repository}}/rust-musl-builder"
-          - df_path: ./rust/gnu-builder
-            image: "${{ github.repository}}/rust-gnu-builder"
-          - df_path: ./rust/musl-watch
-            image: "${{ github.repository}}/rust-musl-watch"
-          - df_path: ./node/alpine-dev
-            image: "${{ github.repository}}/node-alpine-dev"
+        item: ${{ fromJson(needs.find-dockerfiles.outputs.items) }}
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
     steps:
-      - name: Set up Docker
-        uses: docker/setup-docker-action@v5
-        with:
-          daemon-config: |
-            {
-              "debug": true,
-              "features": {
-                "containerd-snapshotter": true
-              }
-            }
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
 
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -68,26 +75,103 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ env.REGISTRY }}/${{ matrix.item.image }}
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.item.image }}
 
       - name: Build and push
         id: push
         uses: docker/build-push-action@v7
         with:
-          platforms: ${{ matrix.item.df_path != './coder/reveal-js' && matrix.item.df_path != './rust/musl-builder' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
+          platforms: ${{ matrix.platform }}
           context: ./
           file: ${{ matrix.item.df_path }}/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
-          load: ${{ github.event_name == 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: ${{ github.event_name != 'workflow_dispatch' && 'type=gha,mode=max' || '' }}
           cache-to: type=gha,mode=max
+          outputs: type=image,push=true,push-by-digest=true,name-canonical=true
+
+      - name: Export digest
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ steps.push.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${{ matrix.item.image }}/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.item.image }}-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/${{ matrix.item.image }}/*
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v4
         if: github.event_name != 'pull_request'
         with:
-          subject-name: ${{ env.REGISTRY }}/${{ matrix.item.image }}
+          subject-name: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.item.image }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
+
+  merge:
+    name: Merge Manifests
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - find-dockerfiles
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        item: ${{ fromJson(needs.find-dockerfiles.outputs.items) }}
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests/${{ matrix.item.image }}
+          pattern: digests-${{ matrix.item.image }}-*
+          merge-multiple: true
+
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.item.image }}
+
+      - name: Create and push manifest list
+        working-directory: ${{ runner.temp }}/digests/${{ matrix.item.image }}
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+                     $(printf '${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.item.image }}@sha256:%s ' *)
+
+      - name: Inspect image
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.item.image }}:${{ steps.meta.outputs.version }}
+
+  collect-results:
+    name: Collect Results
+    runs-on: ubuntu-latest
+    needs: merge
+    if: always()
+    steps:
+      - name: Collect Build Results
+        run: |
+          RESULT="${{ needs.merge.result }}"
+          if [[ $RESULT == "success" || $RESULT == "skipped" ]]; then
+            echo "Build succeeded for all packages"
+            exit 0
+          else
+            echo "Build failed for one or more packages"
+            exit 1
+          fi

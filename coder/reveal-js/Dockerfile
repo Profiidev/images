@@ -19,10 +19,14 @@ RUN apt-get update && \
 # Install Starship
 RUN curl -sS https://starship.rs/install.sh | sh -s -- -y
 # Install fastfetch
-RUN wget https://github.com/fastfetch-cli/fastfetch/releases/download/2.43.0/fastfetch-linux-amd64.deb && \
-    dpkg -i fastfetch-linux-amd64.deb && \
-    rm fastfetch-linux-amd64.deb
-
+ARG TARGETARCH
+RUN if [ "$TARGETARCH" = "amd64" ]; then ARCH="amd64"; \
+    elif [ "$TARGETARCH" = "arm64" ]; then ARCH="aarch64"; \
+    else ARCH="$TARGETARCH"; fi && \
+    wget "https://github.com/fastfetch-cli/fastfetch/releases/download/2.43.0/fastfetch-linux-${ARCH}.deb" && \
+    dpkg -i "fastfetch-linux-${ARCH}.deb" && \
+    rm "fastfetch-linux-${ARCH}.deb"
+    
 # Generate the desired locale (en_US.UTF-8)
 RUN locale-gen en_US.UTF-8
 

@@ -16,8 +16,8 @@ RUN wget https://github.com/LukeMathWalker/cargo-chef/releases/latest/download/c
 
 FROM messense/rust-musl-cross:${RUST_ARCH}-musl
 
-ARG TARGETARCH
-ENV CARGO_CHEF_TARGET=${TARGETARCH/amd64/x86_64}-unknown-linux-musl
+ARG RUST_ARCH
+ENV CARGO_CHEF_TARGET=${RUST_ARCH}-unknown-linux-musl
 
 RUN rustup target add $CARGO_CHEF_TARGET
 COPY --from=builder /cargo-chef /root/.cargo/bin/cargo-chef

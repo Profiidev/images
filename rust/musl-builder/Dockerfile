@@ -1,3 +1,8 @@
+ARG TARGETARCH
+# If TARGETARCH is amd64, result is x86_64. If arm64, result is aarch64.
+ARG RUST_ARCH=${TARGETARCH/amd64/x86_64}
+ARG RUST_ARCH=${RUST_ARCH/arm64/aarch64}
+
 FROM debian:bullseye-slim AS builder
 
 WORKDIR /app
@@ -9,8 +14,7 @@ RUN wget https://github.com/LukeMathWalker/cargo-chef/releases/latest/download/c
     && mv cargo-chef-x86_64-unknown-linux-musl/cargo-chef /cargo-chef \
     && rm -rf cargo-chef-*
 
-ARG TARGETARCH
-FROM messense/rust-musl-cross:${TARGETARCH/amd64/x86_64}-musl
+FROM messense/rust-musl-cross:${RUST_ARCH}-musl
 
 ARG TARGETARCH
 ENV CARGO_CHEF_TARGET=${TARGETARCH/amd64/x86_64}-unknown-linux-musl

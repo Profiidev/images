@@ -45,6 +45,7 @@ jobs:
     strategy:
       matrix:
         item: ${{ fromJson(needs.find-dockerfiles.outputs.items) }}
+        platform: ["linux/amd64", "linux/arm64"]
         include:
           - platform: linux/amd64
             runner: ubuntu-latest

@@ -19,6 +19,7 @@ RUN apt-get update && \
 # Install Starship
 RUN curl -sS https://starship.rs/install.sh | sh -s -- -y
 # Install fastfetch
+ARG TARGETARCH
 RUN if [ "$TARGETARCH" = "amd64" ]; then ARCH="amd64"; \
     elif [ "$TARGETARCH" = "arm64" ]; then ARCH="aarch64"; \
     else ARCH="$TARGETARCH"; fi && \

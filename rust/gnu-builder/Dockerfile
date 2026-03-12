@@ -6,8 +6,8 @@ RUN apt-get update && apt-get install -y wget xz-utils ca-certificates && rm -rf
 
 # use latest when gnu builds are available again
 RUN wget https://github.com/LukeMathWalker/cargo-chef/releases/latest/download/cargo-chef-$(uname -m)-unknown-linux-gnu.tar.xz \
-    && tar -xJf cargo-chef-x86_64-unknown-linux-gnu.tar.xz \
-    && mv cargo-chef-x86_64-unknown-linux-gnu/cargo-chef /cargo-chef \
+    && tar -xJf cargo-chef-$(uname -m)-unknown-linux-gnu.tar.xz \
+    && mv cargo-chef-$(uname -m)-unknown-linux-gnu/cargo-chef /cargo-chef \
     && rm -rf cargo-chef-*
 
 FROM rust:slim

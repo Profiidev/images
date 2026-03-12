@@ -93,9 +93,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: ${{ github.event_name != 'workflow_dispatch' && 'type=gha,mode=max' || '' }}
           cache-to: type=gha,mode=max
-          outputs: type=image,push=true,push-by-digest=true,name-canonical=true
+          outputs: type=image,${{ github.event_name == 'pull_request' && ',push=true,push-by-digest=true,name-canonical=true' || '' }}
 
       - name: Export digest
+        if: github.event_name != 'pull_request'
         run: |
           mkdir -p ${{ runner.temp }}/digests/${{ matrix.item.image }}
           digest="${{ steps.push.outputs.digest }}"
@@ -103,6 +104,7 @@ jobs:
 
       - name: Upload digest
         uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
         with:
           name: digests-${{ matrix.item.image }}-${{ env.PLATFORM_PAIR }}
           path: ${{ runner.temp }}/digests/${{ matrix.item.image }}/*
@@ -129,6 +131,7 @@ jobs:
     strategy:
       matrix:
         item: ${{ fromJson(needs.find-dockerfiles.outputs.items) }}
+    if: github.event_name != 'pull_request'
     steps:
       - name: Prepare
         run: |
@@ -170,16 +173,28 @@ jobs:
   collect-results:
     name: Collect Results
     runs-on: ubuntu-latest
-    needs: merge
+    needs:
+      - merge
+      - build
     if: always()
     steps:
       - name: Collect Build Results
         run: |
-          RESULT="${{ needs.merge.result }}"
+          RESULT="${{ needs.build.result }}"
           if [[ $RESULT == "success" || $RESULT == "skipped" ]]; then
-            echo "Build succeeded for all packages"
+            echo "Build succeeded for all images"
             exit 0
           else
-            echo "Build failed for one or more packages"
+            echo "Build failed for one or more images"
+            exit 1
+          fi
+      - name: Collect Merge Results
+        run: |
+          RESULT="${{ needs.merge.result }}"
+          if [[ $RESULT == "success" || $RESULT == "skipped" ]]; then
+            echo "Merge succeeded for all images"
+            exit 0
+          else
+            echo "Merge failed for one or more images"
             exit 1
           fi

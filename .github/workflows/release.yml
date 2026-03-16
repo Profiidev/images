@@ -103,7 +103,7 @@ jobs:
           touch "${{ runner.temp }}/digests/${{ matrix.item.image }}/${digest#sha256:}"
 
       - name: Upload digest
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: github.event_name != 'pull_request'
         with:
           name: digests-${{ matrix.item.image }}-${{ env.PLATFORM_PAIR }}
@@ -138,7 +138,7 @@ jobs:
           FULL_IMAGE_NAME="${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.item.image }}"
           echo "IMAGE=$(echo $FULL_IMAGE_NAME | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
       - name: Download digests
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: ${{ runner.temp }}/digests/${{ matrix.item.image }}
           pattern: digests-${{ matrix.item.image }}-*

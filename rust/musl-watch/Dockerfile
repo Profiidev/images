@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim@sha256:0083feb8da4f624e3a0245e7752af2517d4b81d8b8db50c725644672a132a31b AS builder
+FROM debian:bullseye-slim@sha256:cba95a21c96c1f5fc2470081829363eed57706634f7dc26e8c6712934303d57a AS builder
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ RUN wget https://github.com/watchexec/cargo-watch/releases/download/v8.5.3/cargo
     && mv cargo-watch-v8.5.3-$(uname -m)-unknown-linux-gnu/cargo-watch /cargo-watch \
     && rm -rf cargo-watch-*
 
-FROM rust:1-slim@sha256:319f354c6f068b01c19292555033a0e6133b4249a893c479aec3b0b8ab2f660a
+FROM rust:1-slim@sha256:5c6f46a6e4472ab1ca7ba7d494e6677f2f219ebc02f32025d3986f057635ec9c
 
 RUN apt-get update && apt-get install -y tini && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /cargo-watch /usr/local/cargo/bin/cargo-watch

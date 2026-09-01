@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim@sha256:cba95a21c96c1f5fc2470081829363eed57706634f7dc26e8c6712934303d57a AS builder
+FROM debian:bullseye-slim@sha256:e5b6442dd2e9684cf5e87d8338b5968f3b348636fc0be6d7850a381e3731a2bd AS builder
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ RUN wget https://github.com/LukeMathWalker/cargo-chef/releases/latest/download/c
     && mv cargo-chef-$(uname -m)-unknown-linux-gnu/cargo-chef /cargo-chef \
     && rm -rf cargo-chef-*
 
-FROM rust:slim@sha256:5c6f46a6e4472ab1ca7ba7d494e6677f2f219ebc02f32025d3986f057635ec9c
+FROM rust:slim@sha256:17d1ba895198f9934c6314ec5346a0d5115372f3243390c3d731e242f35c2f27
 
 COPY --from=builder /cargo-chef /usr/local/cargo/bin/cargo-chef
 

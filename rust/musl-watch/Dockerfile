@@ -10,7 +10,7 @@ RUN wget https://github.com/watchexec/cargo-watch/releases/download/v8.5.3/cargo
     && mv cargo-watch-v8.5.3-$(uname -m)-unknown-linux-gnu/cargo-watch /cargo-watch \
     && rm -rf cargo-watch-*
 
-FROM rust:1-slim@sha256:17d1ba895198f9934c6314ec5346a0d5115372f3243390c3d731e242f35c2f27
+FROM rust:1-slim@sha256:4cd829461bd5c4d511c32e269da9cb8929223b666519d8004e35fc8d1d771ab7
 
 RUN apt-get update && apt-get install -y tini && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /cargo-watch /usr/local/cargo/bin/cargo-watch

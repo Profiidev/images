@@ -3,7 +3,7 @@ ARG TARGETARCH
 ARG RUST_ARCH=${TARGETARCH/amd64/x86_64}
 ARG RUST_ARCH=${RUST_ARCH/arm64/aarch64}
 
-FROM debian:bullseye-slim@sha256:e5b6442dd2e9684cf5e87d8338b5968f3b348636fc0be6d7850a381e3731a2bd AS builder
+FROM debian:trixie-slim@sha256:a99cfc517144bc59b1978475ec53b46ecabec7e43635402ee5b77cc54cd1b20a AS builder
 
 WORKDIR /app
 

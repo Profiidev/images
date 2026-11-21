@@ -10,9 +10,8 @@ RUN wget https://github.com/LukeMathWalker/cargo-chef/releases/latest/download/c
     && mv cargo-chef-$(uname -m)-unknown-linux-gnu/cargo-chef /cargo-chef \
     && rm -rf cargo-chef-*
 
-# Builds Rust to wasm32-unknown-unknown for the browser. wasm-bindgen-cli is not
-# included: it must match the project's wasm-bindgen exactly, so projects fetch
-# the prebuilt release for their Cargo.lock.
+# Builds Rust to wasm32-unknown-unknown for the browser. Projects pin their
+# wasm-bindgen crate to WASM_BINDGEN_VERSION, the CLI must match it exactly.
 FROM rust:slim@sha256:4cd829461bd5c4d511c32e269da9cb8929223b666519d8004e35fc8d1d771ab7
 
 RUN apt-get update \
@@ -20,6 +19,12 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 RUN rustup target add wasm32-unknown-unknown
+
+# renovate: datasource=github-releases depName=wasm-bindgen/wasm-bindgen
+ARG WASM_BINDGEN_VERSION=0.2.130
+RUN curl -sSfL "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/${WASM_BINDGEN_VERSION}/wasm-bindgen-${WASM_BINDGEN_VERSION}-$(uname -m)-unknown-linux-musl.tar.gz" \
+    | tar xz -C /usr/local/bin --strip-components=1 --wildcards '*/wasm-bindgen' \
+    && wasm-bindgen --version
 
 COPY --from=builder /cargo-chef /usr/local/cargo/bin/cargo-chef
 
